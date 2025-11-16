@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generator Grafiki ASCII v3</title>
+    <title>Generator Grafiki ASCII v2</title>
     <style>
         body {
             font-family: sans-serif;
@@ -60,24 +60,10 @@
         .controls button:hover {
             background-color: #0056b3;
         }
-        
-        /* Styl dla inputu szerokości */
-        #width-input {
-            width: 60px;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            text-align: center;
-            font-weight: bold;
-        }
 
         /* Styl dla przycisku kopiowania */
         #copy-button {
             background-color: #28a745;
-            color: white;
-            font-size: 16px;
-            padding: 12px 20px;
-            margin-left: auto; /* Przesuwa na prawo */
         }
         #copy-button:hover {
             background-color: #1e7e34;
@@ -104,10 +90,154 @@
         <button id="toggle-tool">Rysuj: # (Czarny)</button>
         <button onclick="clearGrid()">Wyczyść Siatkę</button>
         
-        <h3>2. Szerokość:</h3>
-        <input type="number" id="width-input" value="50" min="5" max="100" onchange="changeWidth()">
-        <button onclick="changeWidth()">Ustaw Szerokość</button>
+        <h3>2. Zmień Szerokość:</h3>
+        <button onclick="changeWidth(5)">Poszerz (+5)</button>
+        <button onclick="changeWidth(-5)">Skróć (-5)</button>
     </div>
 
     <div class="canvas">
-        <h3>
+        <h3>3. Maluj na siatce (Aktualna szerokość: <span id="current-cols">50</span>):</h3>
+        <table id="grid"></table>
+    </div>
+
+    <div class="output">
+        <h3>4. Twój szyfr ASCII:</h3>
+        <textarea id="ascii-output" readonly></textarea>
+        <button id="copy-button">Kopiuj Kod</button>
+        <span id="copy-message" style="color: green; margin-left: 10px; display: none;">Skopiowano!</span>
+    </div>
+
+    <script>
+        const ROWS = 5;
+        const MAX_COLS = 100;
+        let currentCols = 50; // Zaczynamy z 50, zgodnie z Twoimi zasadami
+        const grid = document.getElementById('grid');
+        const asciiOutput = document.getElementById('ascii-output');
+        const toggleToolButton = document.getElementById('toggle-tool');
+        const currentColsSpan = document.getElementById('current-cols');
+
+        let isDrawingHash = true; // Flaga, domyślnie rysujemy '#'
+
+        // --- INICJALIZACJA I BUDOWA SIATKI ---
+        function createGrid(cols) {
+            // Usuń starą siatkę
+            grid.innerHTML = ''; 
+            
+            for (let i = 0; i < ROWS; i++) {
+                const row = grid.insertRow();
+                for (let j = 0; j < cols; j++) {
+                    const cell = row.insertCell();
+                    cell.classList.add('empty'); // Domyślnie '.'
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+                    cell.addEventListener('click', handleCellClick);
+                    cell.addEventListener('mouseover', handleDragDraw);
+                }
+            }
+            updateAsciiOutput();
+        }
+
+        // --- PRZEŁĄCZANIE CZARNY/BIAŁY ---
+        function toggleTool() {
+            isDrawingHash = !isDrawingHash;
+            if (isDrawingHash) {
+                toggleToolButton.textContent = 'Rysuj: # (Czarny)';
+                toggleToolButton.style.backgroundColor = '#aaa';
+            } else {
+                toggleToolButton.textContent = 'Rysuj: . (Biały)';
+                toggleToolButton.style.backgroundColor = '#eee';
+                toggleToolButton.style.color = '#333';
+            }
+        }
+        toggleToolButton.addEventListener('click', toggleTool);
+
+        // --- RYSOWANIE KLIKNIĘCIEM ---
+        function handleCellClick(event) {
+            const cell = event.target;
+            cell.classList.remove('filled', 'empty');
+            
+            if (isDrawingHash) {
+                cell.classList.add('filled');
+            } else {
+                cell.classList.add('empty');
+            }
+            updateAsciiOutput();
+        }
+
+        // --- RYSOWANIE PRZECIĄGNIĘCIEM (OPCJONALNIE) ---
+        let isMouseDown = false;
+        document.body.addEventListener('mousedown', () => isMouseDown = true);
+        document.body.addEventListener('mouseup', () => isMouseDown = false);
+
+        function handleDragDraw(event) {
+            if (isMouseDown) {
+                handleCellClick(event);
+            }
+        }
+        
+        // --- ZMIANA SZEROKOŚCI SIATKI ---
+        function changeWidth(delta) {
+            let newCols = currentCols + delta;
+            
+            // Ograniczenia
+            if (newCols < 5) newCols = 5; // Minimalna szerokość 5
+            if (newCols > MAX_COLS) newCols = MAX_COLS; // Maksymalna szerokość 50
+
+            if (newCols !== currentCols) {
+                currentCols = newCols;
+                currentColsSpan.textContent = currentCols;
+                createGrid(currentCols);
+            }
+        }
+        
+        // --- AKTUALIZACJA KODU ASCII ---
+        function updateAsciiOutput() {
+            let output = '';
+            for (let i = 0; i < ROWS; i++) {
+                let rowStr = '';
+                for (let j = 0; j < currentCols; j++) {
+                    // Sprawdzamy, czy komórka istnieje (dla siatek o różnej szerokości)
+                    if (grid.rows[i] && grid.rows[i].cells[j]) {
+                        const cell = grid.rows[i].cells[j];
+                        
+                        let char = cell.classList.contains('filled') ? '#' : '.';
+                        
+                        // Dodajemy znak i spację jako separator (wymóg użytkownika)
+                        rowStr += char + ' '; 
+                    }
+                }
+                // Usuwamy ostatnią spację z wiersza i dodajemy znak nowej linii
+                output += rowStr.trim() + '\n';
+            }
+            asciiOutput.value = output.trim();
+        }
+
+        // --- CZYSZCZENIE SIATKI ---
+        function clearGrid() {
+            document.querySelectorAll('#grid td').forEach(cell => {
+                cell.classList.remove('filled');
+                cell.classList.add('empty');
+            });
+            updateAsciiOutput();
+        }
+
+        // --- PRZYCISK KOPIUJ KOD ---
+        document.getElementById('copy-button').addEventListener('click', () => {
+            asciiOutput.select(); // Zaznaczamy tekst
+            asciiOutput.setSelectionRange(0, 99999); // Dla urządzeń mobilnych
+            navigator.clipboard.writeText(asciiOutput.value);
+
+            // Komunikat o skopiowaniu
+            const message = document.getElementById('copy-message');
+            message.style.display = 'inline';
+            setTimeout(() => {
+                message.style.display = 'none';
+            }, 1500);
+        });
+
+        // --- START PROGRAMU ---
+        createGrid(currentCols);
+    </script>
+
+</body>
+</html>
