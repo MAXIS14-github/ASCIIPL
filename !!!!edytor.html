@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generator Grafiki ASCII v3</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+        }
+
+        /* --- STYLA DLA SIATKI PIKSELI --- */
+        #grid {
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background-color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        #grid td {
+            width: 15px;
+            height: 15px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            transition: background-color 0.1s;
+        }
+        .filled {
+            background-color: black;
+        }
+        .empty {
+            background-color: white;
+        }
+
+        /* --- STYLA DLA KONTROLEK I WYJŚCIA --- */
+        .controls, .output {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .controls h3 { margin: 0; }
+
+        .controls button {
+            padding: 10px 15px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background-color 0.2s;
+            background-color: #007bff;
+            color: white;
+        }
+        .controls button:hover {
+            background-color: #0056b3;
+        }
+        
+        /* Styl dla inputu szerokości */
+        #width-input {
+            width: 60px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        /* Styl dla przycisku kopiowania */
+        #copy-button {
+            background-color: #28a745;
+            color: white;
+            font-size: 16px;
+            padding: 12px 20px;
+            margin-left: auto; /* Przesuwa na prawo */
+        }
+        #copy-button:hover {
+            background-color: #1e7e34;
+        }
+
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            font-family: monospace;
+            font-size: 14px;
+            resize: none;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>✏️ Generator Grafiki ASCII</h1>
+
+    <div class="controls">
+        <h3>1. Narzędzia:</h3>
+        <button id="toggle-tool">Rysuj: # (Czarny)</button>
+        <button onclick="clearGrid()">Wyczyść Siatkę</button>
+        
+        <h3>2. Szerokość:</h3>
+        <input type="number" id="width-input" value="50" min="5" max="100" onchange="changeWidth()">
+        <button onclick="changeWidth()">Ustaw Szerokość</button>
+    </div>
+
+    <div class="canvas">
+        <h3>
